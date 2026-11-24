@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>PixelGallery</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+    @top-left { content: "PixelGallery.md"; font: 9pt "Segoe UI", Arial, sans-serif; color: #444; }
+    @top-right { content: "2026-11-24"; font: 9pt "Segoe UI", Arial, sans-serif; color: #444; }
+    @bottom-center { content: counter(page) " / " counter(pages); font: 9pt "Segoe UI", Arial, sans-serif; color: #444; }
+  }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #222; }
+  h1 { font-size: 24pt; font-weight: 400; border-bottom: 1.5px solid #222; padding-bottom: 4px; margin: 0 0 12px; }
+  h2 { font-size: 16pt; font-weight: 400; margin: 18px 0 8px; break-after: avoid; }
+  h3 { font-size: 12.5pt; font-weight: 400; margin: 14px 0 6px; break-after: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; color: #c7862c; font-size: 9.5pt; }
+  pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 4px; padding: 8px 10px;
+        font-family: Consolas, "Courier New", monospace; font-size: 9pt; line-height: 1.35; break-inside: avoid; }
+  pre code { color: #222; }
+  ul { margin: 4px 0 8px; padding-left: 22px; }
+  li { margin: 2px 0; }
+  table { border-collapse: collapse; margin: 6px 0 10px; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 10px 3px 4px; text-align: left; vertical-align: top; }
+  th { border-top: 1.5px solid #222; }
+  img { display: block; margin: 8px 0 10px; border: 1px solid #ddd; break-inside: avoid; }
+  .shot-l { width: 100%; }
+  .shot-m { width: 78%; }
+  .shot-s { width: 66%; }
+  .box { border-left: 4px solid #4a90d9; background: #f3f8fd; padding: 6px 10px; margin: 8px 0; break-inside: avoid; }
+  .todo { border-left: 4px solid #e0a100; background: #fff8e6; padding: 6px 10px; margin: 8px 0; break-inside: avoid; }
+  .ttl { display: block; font-weight: 700; margin-bottom: 2px; }
+  .page-break { break-before: page; }
+  svg text { font-family: "Segoe UI", Arial, sans-serif; }
+  .nobreak { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<h1>Pixel Gallery</h1>
+
+<h2>Lehrziele</h2>
+<ul>
+  <li>App-Struktur mit <code>Core</code> und <code>Persistence</code></li>
+  <li>Entities und Fluent-API-Mappings aus einem ERD erstellen (inkl. m:n-Beziehung)</li>
+  <li>Parser und Unit-Tests (MSTest)</li>
+  <li>WPF MVVM: <code>BaseViewModel</code>, <code>NotifyPropertyChanged</code>, <code>RelayCommand</code>, <code>WindowNavigator</code></li>
+  <li>WPF <code>ItemsControl</code> mit <code>DataTemplate</code></li>
+  <li>WPF Custom Draw</li>
+  <li>WebAPI (ein Endpoint)</li>
+</ul>
+
+<h2>Aufgabenstellung</h2>
+<p>
+In einem Pixel-Art-Kurs zeichnen Schüler:innen kleine Bilder aus farbigen Pixeln. Die Bilder werden als
+Textdateien abgegeben und sollen in einer <i>Pixel Gallery</i> gesammelt, verwaltet und angezeigt werden.
+</p>
+<p>
+Die Vorlage (<code>Template/PixelGallery</code>) enthält bereits den Großteil der Anwendung.
+Alle zu implementierenden Stellen sind mit <code>// TODO (Task n)</code> markiert
+(<i>Visual Studio: View → Task List</i>).
+</p>
+
+<div class="box">
+<span class="ttl">Vorgegeben</span>
+<ul>
+  <li><code>Base</code>, <code>Base.WpfMvvm</code>, <code>Base.Web</code>: Basisklassen (GenericRepository, UnitOfWork, Transaction, RelayCommand, ...)</li>
+  <li><code>ImportConsoleApp</code>: legt die Datenbank <code>PixelGallery</code> neu an (<code>EnsureCreated</code>, keine Migrations notwendig)
+      und importiert Farbpalette und Bilder. Connection-String in <code>appsettings.json</code> (SQL Server, <code>localhost</code>).</li>
+  <li>Alle Fenster (XAML) bis auf die Farblegende, alle ViewModels bis auf die markierten Stellen, das Import-Fenster komplett.</li>
+  <li><code>Core.Tests</code>: Unit-Tests für den Parser (ein Test fehlt).</li>
+</ul>
+</div>
+
+<h2 class="page-break">Task 1 - Datenmodell</h2>
+<p>Für das System wurde folgendes Datenmodell erstellt:</p>
+
+<svg width="100%" viewBox="0 0 760 450" xmlns="http://www.w3.org/2000/svg" style="margin:6px 0 4px">
+  <defs>
+    <style>
+      .ent { fill: #fff; stroke: #333; stroke-width: 1.2; }
+      .hdr { fill: #e8eef7; stroke: #333; stroke-width: 1.2; }
+      .ename { font-size: 14px; font-weight: 700; fill: #111; }
+      .f { font-size: 11.5px; fill: #222; }
+      .t { font-size: 11px; fill: #666; }
+      .k { font-size: 10px; font-weight: 700; fill: #b25b00; }
+      .rel { stroke: #333; stroke-width: 1.3; fill: none; }
+      .card { font-size: 12px; font-weight: 700; fill: #1f5fa8; }
+      .rname { font-size: 10.5px; fill: #555; font-style: italic; }
+      .todo-ent { fill: #fff8e6; }
+    </style>
+  </defs>
+
+  <!-- Artist -->
+  <rect class="ent" x="20" y="20" width="230" height="96" rx="4"/>
+  <rect class="hdr" x="20" y="20" width="230" height="26" rx="4"/>
+  <text class="ename" x="32" y="38">Artist</text>
+  <text class="k" x="28" y="64">PK</text><text class="f" x="52" y="64">Id</text><text class="t" x="160" y="64">int</text>
+  <text class="k" x="28" y="84">UQ</text><text class="f" x="52" y="84">Code</text><text class="t" x="160" y="84">nvarchar(16)</text>
+  <text class="f" x="52" y="104">Name</text><text class="t" x="160" y="104">nvarchar(128)</text>
+
+  <!-- Picture -->
+  <rect class="ent" x="300" y="20" width="230" height="176" rx="4"/>
+  <rect class="hdr" x="300" y="20" width="230" height="26" rx="4"/>
+  <text class="ename" x="312" y="38">Picture</text>
+  <text class="k" x="308" y="64">PK</text><text class="f" x="332" y="64">Id</text><text class="t" x="440" y="64">int</text>
+  <text class="k" x="308" y="84">UQ</text><text class="f" x="332" y="84">Name</text><text class="t" x="440" y="84">nvarchar(256)</text>
+  <text class="f" x="332" y="104">Description</text><text class="t" x="440" y="104">nvarchar(2000)?</text>
+  <text class="f" x="332" y="124">CreatedOn</text><text class="t" x="440" y="124">date</text>
+  <text class="f" x="332" y="144">Width</text><text class="t" x="440" y="144">int</text>
+  <text class="f" x="332" y="164">Height</text><text class="t" x="440" y="164">int</text>
+  <text class="k" x="308" y="184">FK</text><text class="f" x="332" y="184">ArtistId</text><text class="t" x="440" y="184">int?</text>
+
+  <!-- Tag -->
+  <rect class="ent todo-ent" x="580" y="20" width="160" height="76" rx="4"/>
+  <rect class="hdr" x="580" y="20" width="160" height="26" rx="4"/>
+  <text class="ename" x="592" y="38">Tag</text>
+  <text class="k" x="588" y="64">PK</text><text class="f" x="612" y="64">Id</text><text class="t" x="672" y="64">int</text>
+  <text class="k" x="588" y="84">UQ</text><text class="f" x="612" y="84">Name</text><text class="t" x="672" y="84">nvarchar(64)</text>
+
+  <!-- PaletteColor -->
+  <rect class="ent" x="20" y="290" width="230" height="116" rx="4"/>
+  <rect class="hdr" x="20" y="290" width="230" height="26" rx="4"/>
+  <text class="ename" x="32" y="308">PaletteColor</text>
+  <text class="k" x="28" y="334">PK</text><text class="f" x="52" y="334">Id</text><text class="t" x="160" y="334">int</text>
+  <text class="k" x="28" y="354">UQ</text><text class="f" x="52" y="354">Code</text><text class="t" x="160" y="354">nvarchar(1)</text>
+  <text class="f" x="52" y="374">Name</text><text class="t" x="160" y="374">nvarchar(64)</text>
+  <text class="f" x="52" y="394">Hex</text><text class="t" x="160" y="394">nvarchar(7)</text>
+
+  <!-- Stroke -->
+  <rect class="ent" x="300" y="270" width="230" height="156" rx="4"/>
+  <rect class="hdr" x="300" y="270" width="230" height="26" rx="4"/>
+  <text class="ename" x="312" y="288">Stroke</text>
+  <text class="k" x="308" y="314">PK</text><text class="f" x="332" y="314">Id</text><text class="t" x="440" y="314">int</text>
+  <text class="k" x="308" y="334">FK</text><text class="f" x="332" y="334">PictureId</text><text class="t" x="440" y="334">int</text>
+  <text class="f" x="332" y="354">Row</text><text class="t" x="440" y="354">int</text>
+  <text class="f" x="332" y="374">Column</text><text class="t" x="440" y="374">int</text>
+  <text class="f" x="332" y="394">Length</text><text class="t" x="440" y="394">int</text>
+  <text class="k" x="308" y="414">FK</text><text class="f" x="332" y="414">PaletteColorId</text><text class="t" x="440" y="414">int</text>
+
+  <!-- Artist 0..1 - * Picture -->
+  <line class="rel" x1="250" y1="80" x2="300" y2="80"/>
+  <text class="card" x="254" y="74">0..1</text><text class="card" x="288" y="74">*</text>
+
+  <!-- Picture * - * Tag -->
+  <line class="rel" x1="530" y1="58" x2="580" y2="58"/>
+  <text class="card" x="534" y="52">*</text><text class="card" x="570" y="52">*</text>
+  <text class="rname" x="536" y="112">m:n über</text>
+  <text class="rname" x="536" y="125">PictureTag</text>
+
+  <!-- Picture 1 - * Stroke -->
+  <line class="rel" x1="415" y1="196" x2="415" y2="270"/>
+  <text class="card" x="421" y="212">1</text><text class="card" x="421" y="264">*</text>
+
+  <!-- PaletteColor 1 - * Stroke -->
+  <line class="rel" x1="250" y1="348" x2="300" y2="348"/>
+  <text class="card" x="254" y="342">1</text><text class="card" x="288" y="342">*</text>
+
+  <!-- unique index Stroke -->
+  <text class="rname" x="545" y="390">UQ (PictureId, Row, Column)</text>
+  <line class="rel" x1="540" y1="386" x2="532" y2="386" style="stroke-dasharray:2,2"/>
+</svg>
+
+<p style="font-size:9.5pt;color:#555;margin-top:0">
+Alle Entities erben von <code>EntityObject</code> (<code>Id</code>, <code>RowVersion</code>). Tabellennamen = Klassennamen.
+<code>?</code> = nullable, <code>UQ</code> = Unique-Index.
+</p>
+
+<ul>
+  <li><i>Artist</i> - Ersteller:in eines Bildes (<code>Code</code> = Verzeichnisname beim Import).</li>
+  <li><i>Picture</i> - ein Bild. <code>Width</code>/<code>Height</code> in Pixel. Ein Bild kann (noch) keinen Artist haben.</li>
+  <li><i>Stroke</i> - ein waagrechter "Strich" gleichfarbiger Pixel ab (<code>Row</code>, <code>Column</code>) mit der Länge <code>Length</code>.
+      Durchsichtige Pixel werden <b>nicht</b> gespeichert.</li>
+  <li><i>PaletteColor</i> - die Farbpalette (wird aus <code>palette.csv</code> importiert), z.B. <code>R</code>, <code>Rot</code>, <code>#E53935</code>.</li>
+  <li><i>Tag</i> - Schlagwort, ein Bild kann mehrere Tags haben und umgekehrt.</li>
+</ul>
+
+<div class="todo">
+<span class="ttl">Zu implementieren</span>
+<ul>
+  <li>Entity <code>Tag</code> (inkl. Navigation-Property zu <code>Picture</code>) - <code>Picture.Tags</code> existiert bereits.</li>
+  <li><code>StrokeMapping</code>: Unique-Index (<code>PictureId</code>, <code>Row</code>, <code>Column</code>), Beziehungen zu <code>Picture</code>
+      (Cascade Delete) und <code>PaletteColor</code> (Restrict).</li>
+  <li><code>TagMapping</code>: Tabelle, Pflichtfeld + Länge, Unique-Index, m:n-Beziehung zu <code>Picture</code> mit der Zwischentabelle <code>PictureTag</code>.</li>
+</ul>
+Die Mappings von <code>Artist</code>, <code>Picture</code> und <code>PaletteColor</code> dienen als Beispiel.
+</div>
+
+<h2 class="page-break">Task 2 - Import</h2>
+
+<h3>Verzeichnisstruktur (vorgegeben)</h3>
+<p>
+Jedes Bild ist eine Textdatei im Verzeichnis <code>ImportData/&lt;Artist&gt;/</code>, z.B. <code>Anna\Heart_20251103.txt</code>.
+Der Dateiname (ohne Endung) ist der Name des Bildes, der relative Pfad die Description, das Datum am Ende
+(<code>yyyyMMdd</code>) das Erstellungsdatum (sonst: heute). <code>ImportFolderAsync</code> ist bereits fertig
+und überspringt fehlerhafte Dateien (z.B. <code>Ben\Broken_20251111.txt</code> mit unbekannter Farbe <code>X</code>).
+</p>
+
+<h3>Dateiinhalt</h3>
+<div class="nobreak" style="display:flex; gap:18px; align-items:flex-start">
+<pre style="flex:0 0 auto; margin-top:0"><code># Pixel Gallery - Heart_20251103
+#tags: love, red
+2.3K3.3K2.
+.K3RK.K3RK.
+K2RW2RK5RK
+KR2W8RK
+K11RK
+.K9RK.
+2.K7RK2.
+3.K5RK3.
+4.K3RK4.
+5.KRK5.
+6.K6.</code></pre>
+<ul style="flex:1; margin-top:0">
+  <li>Zeilen, die mit <code>#</code> beginnen, sind Kommentare.
+      Ausnahme: <code>#tags:</code> - danach folgen die Tags, durch Beistrich getrennt (Leerzeichen entfernen).</li>
+  <li>Leere Zeilen werden ignoriert. Jede andere Zeile ist eine Pixelzeile (<code>Row</code> beginnt bei 0).</li>
+  <li>Ein Großbuchstabe ist ein Pixel in der Palettenfarbe mit diesem <code>Code</code> =&gt; ein <i>Run</i>.</li>
+  <li><code>.</code> ist ein durchsichtiges Pixel: kein Run, aber die Spalte wird weitergezählt.</li>
+  <li><b>Wiederhol-Prefix</b>: eine (auch mehrstellige) Zahl vor einem Zeichen wiederholt es:
+      <code>3R</code> = <code>RRR</code> =&gt; <b>ein</b> Run mit <code>Length = 3</code>, <code>12L</code> =&gt; Länge 12.
+      Der Prefix wird nach jedem Kommando zurückgesetzt.</li>
+  <li>Alle anderen Zeichen (z.B. Leerzeichen) werden ignoriert.</li>
+  <li><code>Width</code> = längste Zeile, <code>Height</code> = Anzahl der Pixelzeilen.</li>
+</ul>
+</div>
+
+<div class="todo">
+<span class="ttl">Zu implementieren</span>
+<ul>
+  <li><code>PixelParser.Parse</code> (Core) - liefert <code>ParseResult(Tags, Runs, Width, Height)</code>.</li>
+  <li><code>ImportService.ImportPictureAsync</code> (Persistence):
+    <ul>
+      <li>Pro Bild ist eine Transaktion vorzusehen. Bildnamen sind eindeutig.</li>
+      <li>Unbekannter Farbcode =&gt; <code>InvalidOperationException</code> (das Bild wird nicht importiert).</li>
+      <li>Artist und Tags werden wiederverwendet oder neu angelegt.</li>
+      <li>Es müssen die Navigation-Properties verwendet werden - nur <b>ein</b> <code>AddAsync</code> für das Bild.</li>
+    </ul>
+  </li>
+</ul>
+</div>
+
+<h3>Unit-Tests</h3>
+<p>
+Im Projekt <code>Core.Tests</code> sind sieben Tests für den Parser vorgegeben - sie müssen nach Ihrer Implementierung grün sein
+(<code>dotnet test</code>).
+</p>
+<div class="todo">
+<span class="ttl">Zu implementieren</span>
+Schreiben Sie den Test <code>Parse_PrefixIsResetAfterCommand</code> (derzeit <code>Assert.Inconclusive</code>):
+Für die Zeile <code>3R.B</code> wird ein Run <code>R</code> (Spalte 0, Länge 3) und ein Run <code>B</code> (Spalte 4, Länge <b>1</b>)
+erwartet, die Breite ist 5.
+</div>
+
+<h2>Task 3 - WPF</h2>
+<p>Die Verwaltung der Bilder erfolgt mit einer WPF-Anwendung (MVVM).</p>
+
+<h3>Hauptfenster</h3>
+<img class="shot-l" src="images/main.png" alt="Hauptfenster">
+<ul>
+  <li><b>Artists</b> (links): <code>&lt;All&gt;</code> und alle Artists der DB. Die Auswahl filtert die Liste sofort.</li>
+  <li><b>Tag</b> (oben): mit <i>Search</i> werden nur Bilder angezeigt, die einen Tag haben, der den Text enthält.
+      Beide Filter wirken gemeinsam.</li>
+  <li>Die Liste ist nach <code>CreatedOn</code> absteigend (dann <code>Name</code>) sortiert. <i>Pixels</i> ist die Summe der
+      Stroke-Längen, <i>Tags</i> sind alphabetisch und durch Beistrich getrennt.</li>
+  <li><b>Selected picture</b> (rechts): Mini-Vorschau des ausgewählten Bildes (gleiches Control wie im Preview-Fenster).</li>
+  <li>Die Statusleiste zeigt Anzahl der Bilder und Summe der Pixel.</li>
+</ul>
+
+<img class="shot-m" src="images/main-filter.png" alt="Filter nach Tag">
+
+<h3>Artist ändern</h3>
+<img class="shot-m" src="images/main-edit.png" alt="Bearbeitungsmodus">
+<ul>
+  <li><i>Edit</i> startet den Bearbeitungsmodus: nur dann ist die Artist-ComboBox aktiv, Liste, Filter und Import sind gesperrt.</li>
+  <li><i>Save</i> speichert den neuen Artist - <code>(none)</code> setzt den Artist auf <code>null</code>. <i>Cancel</i> verwirft die Änderung.</li>
+  <li><i>Open preview</i> und <i>Edit</i> sind nur aktiv, wenn ein Bild ausgewählt ist (und nicht bearbeitet wird),
+      <i>Save</i>/<i>Cancel</i> nur im Bearbeitungsmodus.</li>
+</ul>
+
+<div class="todo">
+<span class="ttl">Zu implementieren</span>
+<ul>
+  <li><code>PictureRepository.GetOverviewAsync(artistId, tag)</code>: Filtern, Sortieren und Projektion auf
+      <code>PictureOverview</code> erledigt die <b>Datenbank</b> - das Laden der gesamten DB in den Hauptspeicher ist nicht zulässig.</li>
+  <li><code>MainWindowViewModel</code>: die <code>CanExecute</code>-Bedingungen der vier Commands und <code>SaveAsync</code>.</li>
+</ul>
+</div>
+
+<h3>Bildvorschau</h3>
+<img class="shot-m" src="images/preview.png" alt="Bildvorschau">
+<ul>
+  <li>Das Bild wird mit einem <b>Custom Draw</b> (<code>PicturePreviewControl.OnRender</code>) gezeichnet: jeder Stroke als
+      gefülltes Rechteck in seiner Palettenfarbe. Das Bild wird gleichmäßig skaliert (Seitenverhältnis bleibt) und zentriert.</li>
+  <li>Mit <i>Show grid</i> wird zusätzlich ein Gitter über alle Pixel gezeichnet.</li>
+  <li><b>Colors</b>: Farblegende als <code>ItemsControl</code> mit <code>DataTemplate</code> (Farbfeld, Name, Anzahl Pixel),
+      absteigend nach Anzahl der Pixel sortiert.</li>
+</ul>
+
+<div class="todo">
+<span class="ttl">Zu implementieren</span>
+<ul>
+  <li><code>PicturePreviewControl.OnRender</code> (Dependency-Properties sind vorhanden).</li>
+  <li><code>PicturePreviewViewModel</code>: <code>ColorUsages</code> befüllen.</li>
+  <li><code>PicturePreviewWindow.xaml</code>: <code>ItemsControl</code> mit <code>ItemTemplate</code>/<code>DataTemplate</code> für <code>ColorUsages</code>.</li>
+</ul>
+</div>
+
+<h3>Bild importieren (vorgegeben)</h3>
+<img class="shot-s" src="images/import.png" alt="Import-Dialog">
+<p>
+Der Dialog ist fertig: <i>Import</i> ist nur aktiv, wenn die Datei existiert; das Erstellungsdatum ist heute.
+Die Vorschau rechts verwendet bereits Ihren Parser und Ihr Custom-Draw-Control.
+</p>
+
+<h2>Task 4 - WebAPI</h2>
+<p>
+Das Projekt <code>WebApi</code> ist vorbereitet (DI, Swagger, <code>ArtistsController</code> als Beispiel).
+Im <code>PicturesController</code> sind die DTOs bereits vorhanden.
+</p>
+<img class="shot-m" src="images/swagger.png" alt="Swagger">
+
+<div class="todo">
+<span class="ttl">Zu implementieren: <code>GET /Pictures/{id}</code></span>
+<ul>
+  <li><code>200 OK</code> mit <code>PictureDetailDto</code>: Basisdaten, Name des Artists (oder <code>null</code>),
+      Tags (alphabetisch) und je verwendeter Farbe die Anzahl der Pixel (<code>Colors</code>, absteigend nach <code>Pixels</code>).</li>
+  <li><code>404 Not Found</code>, wenn es kein Bild mit dieser Id gibt.</li>
+</ul>
+</div>
+
+<p>Beispiel: <code>GET http://localhost:5123/Pictures/7</code></p>
+<pre><code>{
+  "id": 7,
+  "name": "Sunset_20251118",
+  "description": "Clara\\Sunset_20251118.txt",
+  "createdOn": "2025-11-18",
+  "artist": "Clara",
+  "width": 24,
+  "height": 10,
+  "tags": [ "landscape", "sky" ],
+  "colors": [
+    { "code": "B", "name": "Blau",     "hex": "#1E88E5", "pixels": 87 },
+    { "code": "L", "name": "Hellblau", "hex": "#81D4FA", "pixels": 80 },
+    { "code": "O", "name": "Orange",   "hex": "#FB8C00", "pixels": 36 },
+    { "code": "Y", "name": "Gelb",     "hex": "#FDD835", "pixels": 28 },
+    { "code": "W", "name": "Weiß",     "hex": "#FFFFFF", "pixels": 9 }
+  ]
+}</code></pre>
+
+</body>
+</html>

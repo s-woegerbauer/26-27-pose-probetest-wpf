@@ -1,0 +1,47 @@
+<Window x:Class="Wpf.Views.ImportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:Wpf.ViewModels;assembly=Wpf.ViewModels"
+        xmlns:controls="clr-namespace:Wpf.Controls"
+        d:DataContext="{d:DesignInstance Type=viewModels:ImportViewModel}"
+        mc:Ignorable="d"
+        Title="Import Picture" Height="300" Width="600" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="200" />
+        </Grid.ColumnDefinitions>
+
+        <!-- input -->
+        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+            <TextBlock Text="Name" FontWeight="SemiBold" />
+            <TextBox Margin="0,2,0,6" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Description" FontWeight="SemiBold" />
+            <TextBox Margin="0,2,0,6" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Artist (code)" FontWeight="SemiBold" />
+            <TextBox Margin="0,2,0,6" Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="File" FontWeight="SemiBold" />
+            <TextBox Margin="0,2,0,6" Text="{Binding FileName, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                <Button Content="Import" Width="90" Command="{Binding ImportCommand}" />
+                <Button Content="Cancel" Width="90" Command="{Binding CancelCommand}" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- live preview of the file -->
+        <DockPanel Grid.Column="1">
+            <TextBlock DockPanel.Dock="Top" Text="Preview" FontWeight="SemiBold" />
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding PreviewInfo}" TextWrapping="Wrap"
+                       Foreground="DimGray" FontSize="11" />
+            <Border BorderBrush="#BBBBBB" BorderThickness="1" Margin="0,2" Background="White">
+                <controls:PicturePreviewControl Margin="4"
+                                                Strokes="{Binding PreviewStrokes}"
+                                                PictureWidth="{Binding PreviewWidth}"
+                                                PictureHeight="{Binding PreviewHeight}" />
+            </Border>
+        </DockPanel>
+    </Grid>
+</Window>

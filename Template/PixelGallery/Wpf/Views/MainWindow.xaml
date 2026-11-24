@@ -1,0 +1,83 @@
+<Window x:Class="Wpf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:Wpf.ViewModels;assembly=Wpf.ViewModels"
+        xmlns:controls="clr-namespace:Wpf.Controls"
+        d:DataContext="{d:DesignInstance Type=viewModels:MainWindowViewModel}"
+        mc:Ignorable="d"
+        Title="Pixel Gallery" Height="470" Width="900">
+    <DockPanel>
+        <!-- toolbar: tag search + import -->
+        <Border DockPanel.Dock="Top" Background="#263238" Padding="8,5">
+            <DockPanel>
+                <TextBlock Text="Pixel Gallery" Foreground="White" FontSize="18" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,20,0" />
+                <Button DockPanel.Dock="Right" Content="Import ..." Command="{Binding ImportCommand}" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Tag:" Foreground="White" VerticalAlignment="Center" />
+                    <TextBox Width="140" Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}"
+                             IsEnabled="{Binding IsNotEditing}" />
+                    <Button Content="Search" Command="{Binding SearchCommand}" IsDefault="True" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- status bar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem Content="{Binding StatusText}" />
+        </StatusBar>
+
+        <Grid Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="130" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="210" />
+            </Grid.ColumnDefinitions>
+
+            <!-- artists (filter) -->
+            <GroupBox Grid.Column="0" Header="Artists">
+                <ListBox ItemsSource="{Binding Artists}" DisplayMemberPath="Name" BorderThickness="0"
+                         SelectedItem="{Binding SelectedArtist}" IsEnabled="{Binding IsNotEditing}" />
+            </GroupBox>
+
+            <!-- pictures -->
+            <DataGrid Grid.Column="1" Margin="5,7,5,0" ItemsSource="{Binding Pictures}"
+                      SelectedItem="{Binding SelectedPicture}" IsEnabled="{Binding IsNotEditing}"
+                      AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#DDDDDD" AlternatingRowBackground="#F5F7FA">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="Created" Binding="{Binding CreatedOn, StringFormat=yyyy-MM-dd}" />
+                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" />
+                    <DataGridTextColumn Header="Pixels" Binding="{Binding PixelCount}" />
+                    <DataGridTextColumn Header="Tags" Binding="{Binding Tags}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- selected picture: mini preview + edit artist -->
+            <GroupBox Grid.Column="2" Header="Selected picture">
+                <StackPanel>
+                    <Border BorderBrush="#BBBBBB" BorderThickness="1" Height="150" Margin="0,5" Background="White">
+                        <controls:PicturePreviewControl Margin="4"
+                                                        Strokes="{Binding SelectedStrokes}"
+                                                        PictureWidth="{Binding SelectedPicture.Width}"
+                                                        PictureHeight="{Binding SelectedPicture.Height}" />
+                    </Border>
+                    <TextBlock Text="{Binding SelectedPicture.Name}" FontWeight="Bold" Margin="2" />
+                    <Button Content="Open preview" Command="{Binding OpenPreviewCommand}" />
+                    <TextBlock Text="Artist:" Margin="2,8,2,0" />
+                    <ComboBox ItemsSource="{Binding EditArtists}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedEditArtist}" IsEnabled="{Binding IsEditing}" />
+                    <UniformGrid Rows="1">
+                        <Button Content="Edit" Command="{Binding EditCommand}" />
+                        <Button Content="Save" Command="{Binding SaveCommand}" />
+                        <Button Content="Cancel" Command="{Binding CancelCommand}" />
+                    </UniformGrid>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
