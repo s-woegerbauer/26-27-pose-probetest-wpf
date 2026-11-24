@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><title>PixelGallery - Walkthrough</title>
+<style>
+  @page { size: A4; margin: 18mm 15mm 18mm 15mm;
+    @top-left { content: "PixelGallery - Walkthrough"; font: 9pt "Segoe UI", Arial, sans-serif; color: #444; }
+    @top-right { content: "2026-11-24"; font: 9pt "Segoe UI", Arial, sans-serif; color: #444; }
+    @bottom-center { content: counter(page) " / " counter(pages); font: 9pt "Segoe UI", Arial, sans-serif; color: #444; } }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #222; }
+  h1 { font-size: 22pt; font-weight: 400; border-bottom: 1.5px solid #222; padding-bottom: 4px; margin: 0 0 10px; }
+  h1.task { font-size: 18pt; margin-top: 0; }
+  h2 { font-size: 13.5pt; font-weight: 600; margin: 16px 0 6px; break-after: avoid; color: #1f3b5c; }
+  code { font-family: Consolas, "Courier New", monospace; color: #c7862c; font-size: 9pt; }
+  .code { margin: 6px 0 8px; }
+  .file { break-after: avoid; }
+  pre { orphans: 4; widows: 4; }
+  h1.task { break-before: auto; margin-top: 22px; }
+  table.meta { break-after: avoid; }
+  .file { font: 8.5pt Consolas, monospace; color: #555; background: #e9edf2; border: 1px solid #d5dbe3; border-bottom: none;
+          border-radius: 4px 4px 0 0; padding: 2px 8px; display: inline-block; }
+  pre { margin: 0; background: #f6f8fa; border: 1px solid #d5dbe3; border-radius: 0 4px 4px 4px; padding: 7px 9px;
+        font: 8.4pt/1.32 Consolas, "Courier New", monospace; white-space: pre-wrap; }
+  pre code { color: #222; font-size: inherit; }
+  table { border-collapse: collapse; font-size: 9.3pt; break-inside: avoid; }
+  table.meta { width: 100%; margin: 4px 0 6px; }
+  table.meta th { width: 78px; text-align: left; vertical-align: top; color: #555; font-weight: 600; padding: 3px 8px 3px 0;
+                  border-bottom: 1px solid #e3e3e3; }
+  table.meta td { padding: 3px 0; border-bottom: 1px solid #e3e3e3; vertical-align: top; }
+  table.meta ul { margin: 0; padding-left: 16px; }
+  table.map th, table.map td { border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 3px 10px 3px 4px; text-align: left; }
+  table.map th { border-top: 1.5px solid #222; }
+  .cs { display: inline-block; background: #1f5fa8; color: #fff; border-radius: 3px; padding: 0 5px; font-size: 8.5pt; font-weight: 700; }
+  .pg { color: #1f5fa8; font-weight: 600; }
+  .check { border-left: 4px solid #3a9a4a; background: #eef8ef; padding: 5px 10px; margin: 6px 0 10px; break-inside: avoid; }
+  .ttl { display: block; font-weight: 700; margin-bottom: 1px; }
+  .note { border-left: 4px solid #4a90d9; background: #f3f8fd; padding: 5px 10px; }
+  .page-break { break-before: page; }
+  ol, ul { margin: 4px 0 8px; padding-left: 22px; }
+  .checklist li { margin: 3px 0; }
+</style></head><body>
+
+<h1>Pixel Gallery - Walkthrough</h1>
+<p>
+Dieser Walkthrough führt Schritt für Schritt von der Vorlage (<code>Template/PixelGallery</code>) zur Musterlösung
+(<code>Solution/PixelGallery</code>). Zu jedem Schritt steht, <b>wo</b> der Code hingehört, <b>warum</b> er so aussieht und
+<b>wo</b> im <i>WPF Cheat Sheet</i> (<code>WPF-Cheatsheet-de.pdf</code>) das passende Snippet steht.
+Die Reihenfolge entspricht dem Kapitel <span class="cs">1</span> Ablauf in der Prüfung (S. 2): DB + Import &rarr; ViewModel &rarr;
+XAML &rarr; Custom Draw &rarr; Web API &rarr; Testen.
+</p>
+
+<h2>Schritt 0 - Vorbereitung</h2>
+<ol>
+  <li><code>PixelGallery.sln</code> öffnen, einmal bauen (muss fehlerfrei bauen).</li>
+  <li>Alle Aufgaben finden: <i>View &rarr; Task List</i> bzw. Suche nach <code>TODO (Task</code>. Es sind 13 Stellen.</li>
+  <li>Tests einmal laufen lassen (<i>Test &rarr; Run All Tests</i> bzw. <code>dotnet test</code>): 7 rot, 1 inconclusive - das ist der Ausgangszustand.</li>
+  <li>Platzhalter des Cheatsheets im Kopf umbenennen (Tabelle <span class="cs">1.1</span>, S. 3):</li>
+</ol>
+<table class="map">
+<tr><th>Cheatsheet</th><th>Turtle</th><th>Pixel Gallery</th><th>Bedeutung</th></tr>
+<tr><td><code>Item</code></td><td><code>Script</code></td><td><code>Picture</code></td><td>Haupt-Entity</td></tr>
+<tr><td><code>Category</code></td><td><code>Origin</code></td><td><code>Artist</code></td><td>Nachschlage-Entity, nullable FK</td></tr>
+<tr><td><code>Detail</code></td><td><code>Move</code></td><td><code>Stroke</code></td><td>1:n-Kind (hier mit 2. FK auf <code>PaletteColor</code>)</td></tr>
+<tr><td><code>Tag</code></td><td><code>Competition</code></td><td><code>Tag</code></td><td>m:n ohne Zusatzdaten</td></tr>
+<tr><td><code>Step</code> / <code>ItemParser</code></td><td><code>Move</code> / <code>TurtleParser</code></td><td><code>Run</code> / <code>PixelParser</code></td><td>Parser-Ergebnis + Parser</td></tr>
+<tr><td><code>ItemOverviewDto</code> / <code>CategoryItem</code></td><td><code>ScriptOverviewDto</code> / <code>OriginItem</code></td><td><code>PictureOverview</code> / <code>ArtistItem</code></td><td>Listenzeile / ComboBox-Eintrag</td></tr>
+<tr><td><code>DetailWindow</code> / <code>DetailViewModel</code></td><td><code>ScriptPreview...</code></td><td><code>PicturePreviewWindow</code> / <code>...ViewModel</code></td><td>Detail-Dialog</td></tr>
+<tr><td><code>PreviewControl</code></td><td><code>ScriptPreviewControl</code></td><td><code>PicturePreviewControl</code></td><td>Custom Draw</td></tr>
+</table>
+<p class="note">
+Vorlage muss <b>nicht</b> ergänzt werden: DI-Registrierung (<code>AddPersistence</code>), <code>WindowNavigator</code>, alle Fenster außer der Farblegende,
+<code>ImportFolderAsync</code> und die DB-Erstellung (<code>EnsureCreated</code> - keine Migration, Cheatsheet <span class="cs">4.3</span> entfällt).
+</p>
+
+<h1 class="task">Task 1 - Datenmodell</h1>
+<h2>Schritt 1 - Entity Tag</h2><table class="meta"><tr><th>Wo</th><td><code>Core/Entities/Tag.cs</code></td></tr><tr><th>Warum</th><td>Laut ERD hat <code>Tag</code> einen eindeutigen <code>Name</code> (Pflicht) und ist m:n mit <code>Picture</code> verbunden. <code>Picture.Tags</code> existiert schon - es fehlt die Gegenseite <code>IList&lt;Picture&gt;? Pictures</code>. <code>required</code>, weil <code>Name</code> nicht <code>NULL</code> sein darf.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.1</span> Entities <span class="pg">(S. 5-6)</span> - Klasse <code>Tag</code> (m:n ohne Zusatzdaten). <code>Description</code> &rarr; <code>Name</code>, <code>Items</code> &rarr; <code>Pictures</code>, <code>Active</code> weglassen.</td></tr></table><div class="code"><div class="file">Core/Entities/Tag.cs</div><pre><code>namespace Core.Entities;
+
+using Base.Core.Entities;
+
+public class Tag : EntityObject
+{
+    public required string Name { get; set; }
+
+    public IList&lt;Picture&gt;? Pictures { get; set; }
+}</code></pre></div>
+<h2>Schritt 2 - StrokeMapping</h2><table class="meta"><tr><th>Wo</th><td><code>Persistence/Mapping/StrokeMapping.cs</code> (unter dem vorhandenen <code>HasKey</code>)</td></tr><tr><th>Warum</th><td>ERD: Unique-Index über (<code>PictureId</code>, <code>Row</code>, <code>Column</code>) - ein Pixel-Start kann pro Bild nur einmal vorkommen. <code>Stroke</code> hat <b>zwei</b> Pflicht-FKs. Würden beide kaskadierend löschen, meldet SQL Server <i>"multiple cascade paths"</i> &rarr; die Palette bekommt <code>Restrict</code> (eine Farbe, die verwendet wird, darf nicht gelöscht werden).</td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.2</span> Mapping pro Entity <span class="pg">(S. 6-8)</span>: <code>DetailMapping</code> (zusammengesetzter Unique-Index, S. 7) + Hinweis <code>.HasForeignKey(...)</code>, <code>.OnDelete(DeleteBehavior.Restrict)</code> (S. 8).</td></tr></table><div class="code"><div class="file">StrokeMapping.Map(...)</div><pre><code>entity.HasIndex(s =&gt; new { s.PictureId, s.Row, s.Column }).IsUnique();
+
+entity.HasOne(s =&gt; s.Picture)
+    .WithMany(p =&gt; p.Strokes)
+    .HasForeignKey(s =&gt; s.PictureId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+entity.HasOne(s =&gt; s.PaletteColor)
+    .WithMany(c =&gt; c.Strokes)
+    .HasForeignKey(s =&gt; s.PaletteColorId)
+    .OnDelete(DeleteBehavior.Restrict);</code></pre></div>
+<h2>Schritt 3 - TagMapping (m:n)</h2><table class="meta"><tr><th>Wo</th><td><code>Persistence/Mapping/TagMapping.cs</code></td></tr><tr><th>Warum</th><td>Tabelle, Schlüssel, Pflichtfeld mit Länge 64 (ERD: <code>nvarchar(64)</code>), Unique-Index auf <code>Name</code>. m:n wird mit <code>HasMany(...).WithMany(...)</code> konfiguriert - EF legt die Zwischentabelle selbst an, <code>UsingEntity</code> gibt ihr den Namen <code>PictureTag</code> aus dem ERD.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.2</span> Mapping pro Entity <span class="pg">(S. 6-7)</span>: <code>CategoryMapping</code> (Unique-Index, S. 7) und <code>ItemMapping</code> <code>entity.HasMany(i =&gt; i.Tags).WithMany(t =&gt; t.Items)</code> (S. 7). <code>AsRequiredText(n)</code>: Helfer S. 8.</td></tr></table><div class="code"><div class="file">TagMapping.Map(...)</div><pre><code>entity.ToTable(&quot;Tag&quot;);
+entity.HasKey(t =&gt; t.Id);
+
+entity.Property(t =&gt; t.Name).AsRequiredText(64);
+entity.HasIndex(t =&gt; t.Name).IsUnique();
+
+entity.HasMany(t =&gt; t.Pictures)
+    .WithMany(p =&gt; p.Tags)
+    .UsingEntity(j =&gt; j.ToTable(&quot;PictureTag&quot;));</code></pre></div><div class="check"><span class="ttl">Prüfen</span><code>ImportConsoleApp</code> starten: Die DB wird neu angelegt (noch 0 Bilder, weil der Parser fehlt). Im SQL Server-Objekt-Explorer gibt es jetzt die Tabellen <code>Tag</code> und <code>PictureTag</code>.</div>
+<h1 class="task">Task 2 - Import</h1>
+<h2>Schritt 4 - PixelParser.Parse</h2><table class="meta"><tr><th>Wo</th><td><code>Core/Pixel/PixelParser.cs</code> (reine Logik, keine DB)</td></tr><tr><th>Warum</th><td>Der Parser liefert <code>Run</code>-Records statt Entities - so ist er ohne Datenbank testbar (<code>Core.Tests</code>). Aufbau: Text in Zeilen teilen &rarr; <code>#</code>-Zeilen (Kommentar / <code>#tags:</code>) behandeln &rarr; leere Zeilen überspringen &rarr; pro Zeichen: Ziffer = Prefix aufbauen (<code>prefix * 10 + ziffer</code>, damit <code>12</code> funktioniert), <code>.</code> = Spalte weiterzählen, Großbuchstabe = Run, sonst ignorieren. Nach jedem Kommando wird der Prefix auf 0 gesetzt; unbekannte Zeichen setzen ihn <b>nicht</b> zurück.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.6</span> Import Schritt 1: Parser <span class="pg">(S. 10-11)</span> - Prefix-Logik (<code>(prefix ?? 0) * 10 + (c - '0')</code>, Reset nach jedem Kommando). Zeilen + Kommentare: <span class="cs">3.2</span> Text in Werte zerlegen <span class="pg">(S. 4-5)</span>. Unterschied: hier gibt es keine Farbe <code>$</code>, dafür Spalte/Zeile mitzählen.</td></tr></table><div class="code"><div class="file">PixelParser.Parse</div><pre><code>public static ParseResult Parse(string text)
+{
+    var tags  = new List&lt;string&gt;();
+    var runs  = new List&lt;Run&gt;();
+    int row   = 0;
+    int width = 0;
+
+    foreach (var rawLine in text.Split(&#x27;\n&#x27;))
+    {
+        var line = rawLine.Trim();
+        if (line.Length == 0)
+        {
+            continue; // empty lines are ignored
+        }
+
+        if (line.StartsWith(&#x27;#&#x27;))
+        {
+            if (line.StartsWith(TagsHeader, StringComparison.OrdinalIgnoreCase))
+            {
+                tags.AddRange(line[TagsHeader.Length..]
+                    .Split(&#x27;,&#x27;, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            }
+
+            continue; // other &#x27;#&#x27; lines are comments
+        }
+
+        int column = 0, prefix = 0;
+        foreach (char c in line)
+        {
+            if (char.IsAsciiDigit(c))
+            {
+                prefix = prefix * 10 + (c - &#x27;0&#x27;); // multi digit prefix
+                continue;
+            }
+
+            int count = prefix == 0 ? 1 : prefix;
+            if (c == &#x27;.&#x27;)
+            {
+                column += count; // transparent: no run
+            }
+            else if (char.IsAsciiLetterUpper(c))
+            {
+                runs.Add(new Run(row, column, count, c));
+                column += count;
+            }
+            else
+            {
+                continue; // unknown character: ignore
+            }
+
+            prefix = 0; // reset after each command
+        }
+
+        width = Math.Max(width, column);
+        row++;
+    }
+
+    return new ParseResult(tags, runs, width, row);
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span>Tests laufen lassen: die 7 vorgegebenen Tests sind grün.</div>
+<h2>Schritt 5 - Fehlender Unit-Test</h2><table class="meta"><tr><th>Wo</th><td><code>Core.Tests/PixelParserTests.cs</code>, Methode <code>Parse_PrefixIsResetAfterCommand</code></td></tr><tr><th>Warum</th><td>Der Test sichert die Regel "Prefix wird nach jedem Kommando zurückgesetzt": in <code>3R.B</code> gilt die 3 nur für <code>R</code>. Ohne Reset hätte <code>.</code> die Länge 3 und <code>B</code> würde bei Spalte 6 beginnen. Aufbau nach Arrange / Act / Assert; Name nach dem Muster <i>Was_Bedingung_Erwartung</i>.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">10</span> Unit-Tests <span class="pg">(S. 36)</span> (xUnit + FluentAssertions). In MSTest heißt es: <code>[Fact]</code> &rarr; <code>[TestMethod]</code>, <code>x.Should().Be(y)</code> &rarr; <code>Assert.AreEqual(y, x)</code>. Records vergleicht <code>AreEqual</code> wertweise - siehe die vorgegebenen Tests in derselben Datei.</td></tr></table><div class="code"><div class="file">PixelParserTests.cs</div><pre><code>[TestMethod]
+public void Parse_PrefixIsResetAfterCommand()
+{
+    var result = PixelParser.Parse(&quot;3R.B&quot;);
+
+    Assert.AreEqual(2, result.Runs.Count);
+    Assert.AreEqual(new Run(0, 0, 3, &#x27;R&#x27;), result.Runs[0]);
+    Assert.AreEqual(new Run(0, 4, 1, &#x27;B&#x27;), result.Runs[1]);
+    Assert.AreEqual(5, result.Width);
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span>Alle 8 Tests grün.</div>
+<h2>Schritt 6 - ImportService.ImportPictureAsync</h2><table class="meta"><tr><th>Wo</th><td><code>Persistence/ImportService.cs</code> (+ Hilfsmethode <code>GetOrCreateTagAsync</code>)</td></tr><tr><th>Warum</th><td><ul><li>Erst parsen (Datei lesen, noch keine DB), dann <b>eine Transaktion pro Bild</b>: Fehler &rarr; <code>Dispose</code> ohne Commit = Rollback.</li><li>Doppelter Name und unbekannter Farbcode werden <b>vor</b> dem ersten <code>AddAsync</code> geprüft - sonst bleiben halbe Objekte im ChangeTracker und stören das nächste Bild.</li><li>Palette einmal als Dictionary laden (Code &rarr; Entity) statt pro Run eine Abfrage.</li><li>Artist und Tags: vorhandene suchen, sonst neu anlegen (gleiches Muster wie das vorgegebene <code>GetOrCreateArtistAsync</code>).</li><li>Alles hängt über Navigation-Properties am <code>Picture</code> &rarr; <b>ein</b> <code>AddAsync</code>, keine Ids setzen, kein <code>AddRange</code>.</li></ul></td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.7</span> Import Schritt 2: ImportService <span class="pg">(S. 11-12)</span> - fast 1:1 (Category &rarr; Artist, Details &rarr; Strokes). Methoden der Vorlage: <span class="cs">4.5</span> UnitOfWork / GenericRepository <span class="pg">(S. 9-10)</span>.</td></tr></table><div class="code"><div class="file">ImportService.ImportPictureAsync</div><pre><code>public async Task ImportPictureAsync(string name, string? description, string? artistCode, DateOnly createdOn, string fileName)
+{
+    var result = PixelParser.Parse(await File.ReadAllTextAsync(fileName));
+
+    using var trans = _uow.BeginTransaction();
+
+    if (await _uow.PictureRepository.CountAsync(p =&gt; p.Name == name) &gt; 0)
+    {
+        throw new InvalidOperationException($&quot;Picture &#x27;{name}&#x27; already exists.&quot;);
+    }
+
+    var palette = (await _uow.PaletteColorRepository.GetAsync()).ToDictionary(c =&gt; c.Code[0]);
+    var strokes = new List&lt;Stroke&gt;();
+    foreach (var run in result.Runs)
+    {
+        if (!palette.TryGetValue(run.ColorCode, out var color))
+        {
+            throw new InvalidOperationException($&quot;Unknown color code &#x27;{run.ColorCode}&#x27;.&quot;);
+        }
+
+        strokes.Add(new Stroke { Row = run.Row, Column = run.Column, Length = run.Length, PaletteColor = color });
+    }
+
+    var tags = new List&lt;Tag&gt;();
+    foreach (var tagName in result.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
+    {
+        tags.Add(await GetOrCreateTagAsync(tagName));
+    }
+
+    var picture = new Picture
+    {
+        Name        = name,
+        Description = description,
+        CreatedOn   = createdOn,
+        Width       = result.Width,
+        Height      = result.Height,
+        Artist      = string.IsNullOrWhiteSpace(artistCode) ? null : await GetOrCreateArtistAsync(artistCode),
+        Strokes     = strokes,
+        Tags        = tags,
+    };
+
+    await _uow.PictureRepository.AddAsync(picture); // ONE Add: strokes, tags and artist via navigation properties
+    await trans.CommitTransactionAsync();
+}</code></pre></div><div class="code"><div class="file">ImportService.GetOrCreateTagAsync</div><pre><code>private async Task&lt;Tag&gt; GetOrCreateTagAsync(string name)
+{
+    var tag = (await _uow.TagRepository.GetAsync(t =&gt; t.Name == name)).FirstOrDefault();
+    if (tag == null)
+    {
+        tag = new Tag { Name = name };
+        await _uow.TagRepository.AddAsync(tag);
+    }
+
+    return tag;
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span><code>ImportConsoleApp</code> starten: <code>Import done: 7 pictures</code>, <code>Ben\Broken_20251111.txt</code> wird mit <i>Unknown color code 'X'</i> übersprungen. <code>Ben\House.txt</code> hat kein Datum &rarr; heute.</div>
+<h1 class="task">Task 3 - WPF</h1>
+<h2>Schritt 7 - Übersicht: GetOverviewAsync</h2><table class="meta"><tr><th>Wo</th><td><code>Persistence/PictureRepository.cs</code></td></tr><tr><th>Warum</th><td>Die Liste zeigt pro Bild Summen und Tags. Filter, Sortierung und Projektion stehen <b>vor</b> <code>ToListAsync()</code> und laufen damit als SQL: <code>Sum</code> wird zu einer Unterabfrage, es werden keine Strokes geladen (sonst Punkteabzug: "ganze Tabelle laden statt in der DB filtern"). Tag-Filter: <code>Any(... Contains ...)</code> &rarr; <code>EXISTS ... LIKE</code>. Sortierung laut Angabe: <code>CreatedOn</code> <b>absteigend</b>, dann <code>Name</code>.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">4.4</span> Repository-Abfrage für die Übersicht <span class="pg">(S. 8-9)</span> - <code>ItemRepository.GetOverviewAsync</code>. Unterschiede: zweiter Filter (Tag), <code>OrderByDescending</code>, <code>Sum</code> statt <code>Count</code>. Der Record <code>PictureOverview</code> ist schon da (<code>Tags</code> als fertiger String).</td></tr></table><div class="code"><div class="file">PictureRepository.GetOverviewAsync</div><pre><code>public async Task&lt;IList&lt;PictureOverview&gt;&gt; GetOverviewAsync(int? artistId, string? tag)
+{
+    var query = DbSet.AsNoTracking();
+    if (artistId != null)
+    {
+        query = query.Where(p =&gt; p.ArtistId == artistId);
+    }
+
+    if (!string.IsNullOrWhiteSpace(tag))
+    {
+        query = query.Where(p =&gt; p.Tags!.Any(t =&gt; t.Name.Contains(tag)));
+    }
+
+    return await query
+        .OrderByDescending(p =&gt; p.CreatedOn)
+        .ThenBy(p =&gt; p.Name)
+        .Select(p =&gt; new PictureOverview(
+            p.Id,
+            p.CreatedOn,
+            p.Name,
+            p.ArtistId,
+            p.Artist!.Name,
+            p.Width,
+            p.Height,
+            p.Strokes!.Sum(s =&gt; s.Length),
+            string.Join(&quot;,&quot;, p.Tags!.OrderBy(t =&gt; t.Name).Select(t =&gt; t.Name))))
+        .ToListAsync();
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span>WPF starten: 7 Bilder, Filter über die Artist-Liste und das Tag-Feld (z.B. <code>nature</code> &rarr; 3 Bilder) funktionieren, die Mini-Vorschau bleibt noch leer.</div>
+<h2>Schritt 8 - Buttons aktiv/inaktiv + Speichern</h2><table class="meta"><tr><th>Wo</th><td><code>Wpf.ViewModels/MainWindowViewModel.cs</code> - Konstruktor und <code>SaveAsync</code></td></tr><tr><th>Warum</th><td>Der zweite Parameter von <code>RelayCommand</code> ist <code>CanExecute</code> und steuert, ob der Button aktiv ist. Regeln der Angabe: <i>Open preview</i>/<i>Edit</i> nur mit Auswahl und nicht im Bearbeitungsmodus, <i>Save</i>/<i>Cancel</i> nur im Bearbeitungsmodus. <code>SaveAsync</code> lädt das Bild <b>getrackt</b> (<code>GetByIdAsync</code>), setzt nur den FK (<code>null</code> bei <code>(none)</code>), speichert, beendet den Bearbeitungsmodus und lädt die Liste neu, damit die Artist-Spalte stimmt.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">5.1</span> Haupt-ViewModel: Filter, Liste, Edit/Update <span class="pg">(S. 13-16)</span>: Commands im Konstruktor (S. 14), <code>UpdateCategoryAsync</code> (S. 16). Button bleibt grau &rarr; <span class="cs">11</span> Häufige Fehler <span class="pg">(S. 36)</span>.</td></tr></table><div class="code"><div class="file">Konstruktor (Ausschnitt)</div><pre><code>OpenPreviewCommand = new RelayCommand(() =&gt; Controller!.ShowPicturePreview(SelectedPicture!.Id),
+    () =&gt; SelectedPicture != null &amp;&amp; !IsEditing);
+EditCommand = new RelayCommand(StartEdit,
+    () =&gt; SelectedPicture != null &amp;&amp; !IsEditing);
+SaveCommand   = new RelayCommand(async () =&gt; await SaveAsync(), () =&gt; IsEditing);
+CancelCommand = new RelayCommand(CancelEdit, () =&gt; IsEditing);</code></pre></div><div class="code"><div class="file">SaveAsync</div><pre><code>private async Task SaveAsync()
+{
+    try
+    {
+        var picture = await _uow.PictureRepository.GetByIdAsync(SelectedPicture!.Id);
+        picture!.ArtistId = SelectedEditArtist?.Id;
+        await _uow.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        Controller?.ShowMessageBox(ex.GetBaseException().Message);
+    }
+    finally
+    {
+        IsEditing = false;
+    }
+
+    await LoadPicturesAsync();
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span>Bild wählen &rarr; <i>Edit</i> &rarr; Liste/Filter gesperrt, ComboBox aktiv &rarr; <code>(none)</code> &rarr; <i>Save</i>: Artist-Spalte ist leer (DB: <code>ArtistId = NULL</code>).</div>
+<h2>Schritt 9 - Farblegende: ColorUsages befüllen</h2><table class="meta"><tr><th>Wo</th><td><code>Wpf.ViewModels/PicturePreviewViewModel.cs</code> - Ende von <code>InitializeDataAsync</code></td></tr><tr><th>Warum</th><td>Pro Farbe die Summe der Stroke-Längen, absteigend sortiert. Das Bild wurde mit <code>GetNoTrackingByIdAsync</code> geladen - ohne Tracking bekommt jeder Stroke ein <b>eigenes</b> <code>PaletteColor</code>-Objekt. Deshalb nach dem <code>Code</code> gruppieren, nicht nach dem Objekt (sonst eine Gruppe pro Stroke).</td></tr><tr><th>Cheatsheet</th><td><span class="cs">5.3</span> Dialog-ViewModel: Details eines Datensatzes laden <span class="pg">(S. 19-20)</span> (Laden mit Include als String ist schon vorgegeben). Liste <b>neu befüllen</b> statt anhängen: <span class="cs">11</span> Häufige Fehler <span class="pg">(S. 36)</span>.</td></tr></table><div class="code"><div class="file">InitializeDataAsync (Ende)</div><pre><code>ColorUsages.Clear();
+foreach (var usage in Strokes
+             .GroupBy(s =&gt; s.PaletteColor!.Code) // NoTracking: group by key, not by instance
+             .Select(g =&gt; new ColorUsage(g.First().PaletteColor!.Name, g.First().PaletteColor!.Hex, g.Sum(s =&gt; s.Length)))
+             .OrderByDescending(u =&gt; u.PixelCount)
+             .ThenBy(u =&gt; u.Name))
+{
+    ColorUsages.Add(usage);
+}</code></pre></div>
+<h2>Schritt 10 - ItemsControl mit DataTemplate</h2><table class="meta"><tr><th>Wo</th><td><code>Wpf/Views/PicturePreviewWindow.xaml</code> - Platzhalter <code>TextBlock "TODO"</code> ersetzen</td></tr><tr><th>Warum</th><td>Ein <code>ItemsControl</code> zeigt jedes Element mit dem <code>DataTemplate</code> an (keine Spalten, keine Auswahl). Im Template ist der <code>DataContext</code> das einzelne <code>ColorUsage</code>. <code>Fill="{Binding Hex}"</code> funktioniert direkt, weil WPF den String <code>#E53935</code> in einen Brush umwandelt. Der umgebende <code>ScrollViewer</code> ist vorgegeben - ein <code>ItemsControl</code> scrollt nicht selbst.</td></tr><tr><th>Cheatsheet</th><td><span class="cs">7.9</span> ItemsControl mit DataTemplate <span class="pg">(S. 28-29)</span> (erstes Beispiel). <code>StringFormat</code>: <span class="cs">7.10</span> Binding-Spickzettel <span class="pg">(S. 29)</span>. <code>DockPanel</code>: <span class="cs">7.12</span> Layout-Panels <span class="pg">(S. 30)</span>.</td></tr></table><div class="code"><div class="file">PicturePreviewWindow.xaml</div><pre><code>&lt;ItemsControl ItemsSource=&quot;{Binding ColorUsages}&quot;&gt;
+    &lt;ItemsControl.ItemTemplate&gt;
+        &lt;DataTemplate&gt;
+            &lt;Border BorderBrush=&quot;#DDDDDD&quot; BorderThickness=&quot;0,0,0,1&quot; Padding=&quot;2,4&quot;&gt;
+                &lt;DockPanel&gt;
+                    &lt;Rectangle Width=&quot;22&quot; Height=&quot;22&quot; Fill=&quot;{Binding Hex}&quot; Stroke=&quot;Black&quot;
+                               StrokeThickness=&quot;0.5&quot; RadiusX=&quot;3&quot; RadiusY=&quot;3&quot; /&gt;
+                    &lt;TextBlock DockPanel.Dock=&quot;Right&quot; VerticalAlignment=&quot;Center&quot;
+                               Text=&quot;{Binding PixelCount, StringFormat={}{0} px}&quot; /&gt;
+                    &lt;TextBlock Text=&quot;{Binding Name}&quot; Margin=&quot;8,0&quot; VerticalAlignment=&quot;Center&quot; /&gt;
+                &lt;/DockPanel&gt;
+            &lt;/Border&gt;
+        &lt;/DataTemplate&gt;
+    &lt;/ItemsControl.ItemTemplate&gt;
+&lt;/ItemsControl&gt;</code></pre></div>
+<h2>Schritt 11 - Custom Draw: OnRender</h2><table class="meta"><tr><th>Wo</th><td><code>Wpf/Controls/PicturePreviewControl.cs</code> (Dependency-Properties sind vorgegeben)</td></tr><tr><th>Warum</th><td><ul><li>Die Bildgröße ist bekannt (<code>PictureWidth</code>/<code>PictureHeight</code>) - eine Bounding-Box wie im Cheatsheet ist nicht nötig.</li><li><b>Ein</b> Faktor für x und y (<code>Math.Min</code>), sonst wird das Bild verzerrt; der Rest wird halbiert &rarr; zentriert.</li><li>Jeder Stroke ist ein Rechteck: x = Spalte, y = Zeile, Breite = Länge, Höhe = 1 Pixel - alles mal <code>scale</code>.</li><li>Brush aus dem Hex-String mit <code>ColorConverter</code>, pro Farbe nur einmal erzeugen und <code>Freeze()</code>.</li><li><i>Show grid</i>: senkrechte und waagrechte Linien im Abstand <code>scale</code>.</li><li>Neu gezeichnet wird automatisch: die Dependency-Properties haben <code>AffectsRender</code>.</li></ul></td></tr><tr><th>Cheatsheet</th><td><span class="cs">8.1</span> Teil A: UserControl mit bindbarer Property + Skalierung <span class="pg">(S. 30-32)</span> - Skalierung/Zentrierung (S. 31), <code>dc.DrawRectangle(brush, pen, rect)</code> (S. 32). Teil B (<span class="cs">8.2</span>  <span class="pg">(S. 32)</span>) entfällt: aus jedem Stroke wird direkt ein Rechteck statt einer Linie.</td></tr></table><div class="code"><div class="file">PicturePreviewControl.OnRender</div><pre><code>protected override void OnRender(DrawingContext dc)
+{
+    // transparent background =&gt; the whole area is hit-testable and has a defined size
+    dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, ActualWidth, ActualHeight));
+
+    if (Strokes == null || PictureWidth &lt;= 0 || PictureHeight &lt;= 0)
+    {
+        return;
+    }
+
+    // uniform scaling, centered
+    double scale   = Math.Min(ActualWidth / PictureWidth, ActualHeight / PictureHeight);
+    double offsetX = (ActualWidth  - PictureWidth  * scale) / 2;
+    double offsetY = (ActualHeight - PictureHeight * scale) / 2;
+
+    var brushes = new Dictionary&lt;string, Brush&gt;();
+    foreach (var stroke in Strokes)
+    {
+        var hex = stroke.PaletteColor?.Hex ?? &quot;#FF00FF&quot; /* unknown color */;
+        if (!brushes.TryGetValue(hex, out var brush))
+        {
+            brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+            brush.Freeze();
+            brushes[hex] = brush;
+        }
+
+        var rect = new Rect(
+            offsetX + stroke.Column * scale,
+            offsetY + stroke.Row    * scale,
+            stroke.Length * scale,
+            scale);
+        dc.DrawRectangle(brush, null, rect);
+    }
+
+    // optional pixel grid
+    if (ShowGrid)
+    {
+        var gridPen = new Pen(Brushes.LightGray, 0.5);
+        gridPen.Freeze();
+        for (int x = 0; x &lt;= PictureWidth; x++)
+        {
+            dc.DrawLine(gridPen, new Point(offsetX + x * scale, offsetY),
+                new Point(offsetX + x * scale, offsetY + PictureHeight * scale));
+        }
+
+        for (int y = 0; y &lt;= PictureHeight; y++)
+        {
+            dc.DrawLine(gridPen, new Point(offsetX, offsetY + y * scale),
+                new Point(offsetX + PictureWidth * scale, offsetY + y * scale));
+        }
+    }
+
+    // frame of the picture area
+    dc.DrawRectangle(null, new Pen(Brushes.LightGray, 1),
+        new Rect(offsetX, offsetY, PictureWidth * scale, PictureHeight * scale));
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span>Mini-Vorschau im Hauptfenster, Preview-Fenster (Fenster vergrößern &rarr; Bild wächst, bleibt unverzerrt), <i>Show grid</i>, und die Vorschau im Import-Dialog zeigen das Bild. Import von <code>Rocket</code> funktioniert, das neue Bild erscheint in der Liste.</div>
+<h1 class="task">Task 4 - WebAPI</h1>
+<h2>Schritt 12 - GET /Pictures/{id}</h2><table class="meta"><tr><th>Wo</th><td><code>WebApi/Controllers/PicturesController.cs</code> (DTOs sind vorgegeben)</td></tr><tr><th>Warum</th><td><ul><li><code>[HttpGet("{id:int}")]</code> + <code>[Route("[controller]")]</code> der Klasse ergibt <code>/Pictures/5</code>.</li><li>Nur dieses eine Bild laden, mit Includes als String (<code>Strokes.PaletteColor</code> lädt zwei Ebenen).</li><li><code>null</code> &rarr; <code>NotFound()</code> (404), sonst <code>Ok(dto)</code> (200). Nie die Entity zurückgeben, immer das DTO.</li><li>Farben wie in Schritt 9 nach <code>Code</code> gruppieren (NoTracking).</li><li><code>ProducesResponseType</code> + XML-Kommentar &rarr; Swagger zeigt 200/404 und die Beschreibung.</li></ul></td></tr><tr><th>Cheatsheet</th><td><span class="cs">9.1</span> Controller: DTO, GET by Id <span class="pg">(S. 33-34)</span> - <code>GetAsync(int id)</code> mit <code>GetNoTrackingByIdAsync</code>. Statuscodes: Liste S. 35 (<code>this.NotFoundOrOk(x)</code> ginge auch).</td></tr></table><div class="code"><div class="file">PicturesController.GetAsync</div><pre><code>/// &lt;summary&gt;
+/// Get the details of a picture incl. tags and color statistics.
+/// &lt;/summary&gt;
+/// &lt;param name=&quot;id&quot;&gt;id of the picture&lt;/param&gt;
+/// &lt;response code=&quot;200&quot;&gt;picture found&lt;/response&gt;
+/// &lt;response code=&quot;404&quot;&gt;no picture with this id&lt;/response&gt;
+[HttpGet(&quot;{id:int}&quot;)]
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task&lt;ActionResult&lt;PictureDetailDto&gt;&gt; GetAsync(int id)
+{
+    var picture = await _uow.PictureRepository.GetNoTrackingByIdAsync(id,
+        nameof(Picture.Artist),
+        nameof(Picture.Tags),
+        $&quot;{nameof(Picture.Strokes)}.{nameof(Stroke.PaletteColor)}&quot;);
+
+    if (picture == null)
+    {
+        return NotFound();
+    }
+
+    var colors = picture.Strokes!
+        .GroupBy(s =&gt; s.PaletteColor!.Code) // NoTracking: group by key, not by instance
+        .Select(g =&gt; new ColorUsageDto(g.Key, g.First().PaletteColor!.Name, g.First().PaletteColor!.Hex, g.Sum(s =&gt; s.Length)))
+        .OrderByDescending(c =&gt; c.Pixels)
+        .ThenBy(c =&gt; c.Code)
+        .ToList();
+
+    return Ok(new PictureDetailDto(
+        picture.Id,
+        picture.Name,
+        picture.Description,
+        picture.CreatedOn,
+        picture.Artist?.Name,
+        picture.Width,
+        picture.Height,
+        picture.Tags!.Select(t =&gt; t.Name).OrderBy(t =&gt; t).ToList(),
+        colors));
+}</code></pre></div><div class="check"><span class="ttl">Prüfen</span><code>WebApi</code> starten &rarr; <code>http://localhost:5123/swagger</code>: <code>/Pictures/7</code> liefert <i>Sunset</i> mit 5 Farben (siehe Beispiel-JSON in der Angabe), <code>/Pictures/999</code> liefert 404.</div>
+
+<h2>Schritt 13 - Abschlusskontrolle</h2>
+<p>Checkliste aus Cheatsheet <span class="cs">1</span> (S. 2, "6. Testen" und "Punkteverluste"):</p>
+<ul class="checklist">
+  <li>Alle 8 Tests grün, keine <code>TODO</code> mehr in der Task List.</li>
+  <li>Kein Code im Code-Behind (nur Konstruktor + <code>Loaded</code>, wie vorgegeben).</li>
+  <li>Filtern passiert in der DB (<code>GetOverviewAsync</code>), nicht im Speicher.</li>
+  <li>Buttons: <i>Open preview</i>/<i>Edit</i> grau ohne Auswahl, <i>Save</i>/<i>Cancel</i> nur beim Bearbeiten, Import im Dialog nur bei existierender Datei.</li>
+  <li>Zweimal filtern / Import &rarr; keine doppelten Einträge in Liste und Farblegende.</li>
+  <li>Preview-Fenster vergrößern &rarr; nur die Zeichenfläche wächst, das Bild bleibt unverzerrt und zentriert.</li>
+  <li>Artist auf <code>(none)</code> setzen und speichern &rarr; Spalte leer, nach Neustart immer noch leer.</li>
+  <li>API: 200 mit korrektem JSON, 404 für unbekannte Id.</li>
+</ul>
+
+</body></html>

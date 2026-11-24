@@ -5,6 +5,7 @@ Practice test for POSE (WPF / .NET 8): a pixel-art gallery with import, WPF mana
 | Folder | Content |
 |---|---|
 | [`Angabe/PixelGallery.pdf`](Angabe/PixelGallery.pdf) | Assignment (German) with ERD and screenshots (`PixelGallery.html` is the source) |
+| [`Angabe/walkthrough.pdf`](Angabe/walkthrough.pdf) | Step-by-step solution guide (German): what to do, where, why, and which section/page of `WPF-Cheatsheet-de.pdf` has the matching snippet |
 | [`Template/PixelGallery`](Template/PixelGallery) | Starting point for the test - all open tasks are marked with `// TODO (Task n)` |
 | [`Solution/PixelGallery`](Solution/PixelGallery) | Sample solution |
 
